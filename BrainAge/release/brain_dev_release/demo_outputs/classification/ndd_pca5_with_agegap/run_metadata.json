@@ -1,0 +1,13 @@
+{
+  "dataset_csv": "demo_data/classification/ndd/dataset.csv",
+  "feature_mode": "pca5_with_agegap",
+  "requested_folds": 3,
+  "effective_folds": 3,
+  "seed": 42,
+  "models": [
+    "logistic_l2",
+    "ridge"
+  ],
+  "n_rows": 180,
+  "n_subjects": 60
+}

@@ -1,0 +1,421 @@
+clear
+clc
+
+%addpath('/media/zhark2/glab1/Haitao/Toolbox_codes/NIfTI_20140122/'); 
+%addpath('/media/zhark2/glab1/Haitao/Toolbox_codes/github_repo_myversion/');  %%!!  
+
+%ROIs = {'visualOne','visualTwo','visualThree','DMN','sensoryMotor','auditory','executiveControl','frontoParietalOne','frontoParietalTwo', 'anteriorinsulaR', 'amygdala', 'hippocampus'};  %% 12    %%!!  (omit cerebellum)
+%num_ROIs = length(ROIs);
+
+ROIs = {'Gradient1', 'Gradient2'};  %% 2    %%!!  %%!!  Gradient1: Sensorimotor-Visual; Gradient2: Primary-Transmodel    
+networks = {'Gradient1', 'Gradient2'};  %% 2    %%!!  updated!!  
+num_ROIs = length(ROIs); % 
+
+Colors = [0 114 189; 217 83 25] / 255;  %%!!  RGB values for Gradient1/2  
+
+measures = {'Gradient12_Var2', 'Gradient12_RanIV2', 'Gradient12_Ran2'};  %%!!    %%!!    %%!!  AlignedToHCP
+measures_str = {'Var', 'RanIV', 'Range'};  %%!!    %%!!  
+Cov_label = '_Harmo';  %%!!    %%!!  ''(original) / '_Harmo'  %%!!    %%!!  
+if strcmp(Cov_label, '')
+    ylims = [0,4; 2,6; 4,10];  %%!!    %%!!  
+elseif strcmp(Cov_label, '_Harmo')
+    ylims = [0,4; 2,6; 4,10];  %%!!    %%!!  
+end
+
+% UNC: UNC 0 1 2 4 6 8 10 in 2yr space
+dataset = 'UNC';
+FD = '_0.3mm'; %% 0.3mm:'_0.3mm' or 0.5mm:'_0.5mm' 
+threshold = 90;  %%  notr90 
+
+for mm=1:length(measures)  %%!!    %%!!  7:8%
+    measure = measures{mm};
+    measure_str = measures_str{mm};  %%!!  
+
+if ismember(measure, {'Str', 'BC', 'Enodal', 'Elocal'})  %%!!  %%!!  graph measures
+    label = '_8mm2';  %%!!    %%!!  _8mm2
+else
+    label = '';  %%!!  
+end
+
+groups = {'neonate', 'oneyear', 'twoyear', 'fouryear', 'sixyear', 'eightyear', 'tenyear', 'HCP_2yrspace_4mm'};  %%!!  
+groups_s = {'0', '1', '2', '4', '6', '8', '10', 'HCP_2yrspace_4mm'};  %%!!  
+GAS_rough = [300, 665, 1030, 1760, 2490, 3220, 3950, 4680];  %%!!  
+GAS_rough_labels = {'300', '665', '1030', '1760', '2490', '3220', '3950', 'Adult'};  %%!!  
+
+datapath = ['/media/zhark2/glab7/Haitao/UNC_Trajectory_heatmaps/0NewCompleteAnalyses/MSFPCA3_New_tables_results/mFPCA/GitHub_mFPCA_updated/UNC_tra_mfpca_analyses_' measure label Cov_label '_twinPick_All/notebooks/'];  %%!!  %%!!  
+if ismember(measure, {'McosSim2', 'Gradient1_AlignedToHCP', 'Gradient2_AlignedToHCP', 'Gradient12_Var2', 'Gradient12_RanIV2', 'GradientsDispW', 'GradientsDispN', 'GradientsDispW2', 'GradientsDispN2'})  %%!!  'Gradient12_Ran2',   %%!!  
+    Cov_label_HCP = '';  %%!!  %%!!  HCP Ref (Original)
+else
+    Cov_label_HCP = '_Harmo';  %%!!  %%!!  HCP Ref (Harmo)
+end
+datapath0 = ['/media/zhark2/glab7/Haitao/UNC_Trajectory_heatmaps/0NewCompleteAnalyses/MSFPCA3_New_tables_results/M_FC_Z_' measure label Cov_label_HCP '_twinPick_All/'];  %%!!  %%!!  HCP Ref
+outputpath = '/media/zhark2/glab7/Haitao/UNC_Trajectory_heatmaps/0NewCompleteAnalyses/MSFPCA3_New_tables_results/mFPCA/mfpca_plot_results_Reconstruct_withHCP/';  %%!!  %%!!  
+if ~exist(outputpath, 'dir')  %%!!  
+    mkdir(outputpath);  %%!!  
+end
+listpath = ['/media/zhark2/glab6/Project_Replication/Preprocessed_Data/UNC/lists_0.3mm/'];
+subjects_twinPick_All = importSubjIDs([listpath '01246810_Union_full_subject_updated_final_twinPick.txt']);
+subjects_twinPick_Normal = importSubjIDs([listpath '01246810_Union_full_subject_updated_final_twinPick_32W_Healthy.txt']);
+subjects_twinPick_NDD = importSubjIDs([listpath '01246810_Union_full_subject_updated_final_twinPick_ADAU.txt']);
+subjects_twinPick_MPD = importSubjIDs([listpath '01246810_Union_full_subject_updated_final_twinPick_MaternalPD.txt']);
+
+FPC_scores = readcell([datapath 'mfpca_tra_' measure label Cov_label '_twinPick_All_FPC_scores_1.csv'], 'DatetimeType', 'text');  %%!!    %%!!  
+X_GAS_Day_Y_STDZ_Mean_mFPCA = readcell([datapath 'mfpca_tra_' measure label Cov_label '_twinPick_All_X_GAS_Day_Y_STDZ_Mean_mFPCA_1.csv']);  %%!!  
+X_GAS_Day_Y_STDZ_FPCs_mFPCA = readcell([datapath 'mfpca_tra_' measure label Cov_label '_twinPick_All_X_GAS_Day_Y_STDZ_FPCs_mFPCA_1.csv']);  %%!!  
+Original_Scale_Var_mean = readcell([datapath 'mfpca_tra_' measure label Cov_label '_twinPick_All_Original_Scale_Var_mean_1.csv']);  %%!!  
+Original_Scale_Var_std = readcell([datapath 'mfpca_tra_' measure label Cov_label '_twinPick_All_Original_Scale_Var_std_1.csv']);  %%!!  
+
+FPC_scores_twinPick_All = cell2mat(FPC_scores(2:end, 4:end));  %%!!  
+FPC_scores_twinPick_Normal = cell2mat(FPC_scores(ismember(FPC_scores(:, 2), subjects_twinPick_Normal), 4:end));  %%!!  
+FPC_scores_twinPick_NDD = cell2mat(FPC_scores(ismember(FPC_scores(:, 2), subjects_twinPick_NDD), 4:end));  %%!!  
+FPC_scores_twinPick_MPD = cell2mat(FPC_scores(ismember(FPC_scores(:, 2), subjects_twinPick_MPD), 4:end));  %%!!  
+X_GAS_Day = cell2mat(X_GAS_Day_Y_STDZ_Mean_mFPCA(2:end, 1));  %%!!  
+Y_STDZ_Mean_mFPCA = cell2mat(X_GAS_Day_Y_STDZ_Mean_mFPCA(2:end, 2:end));  %%!!  
+Y_STDZ_FPCs_mFPCA = cell2mat(X_GAS_Day_Y_STDZ_FPCs_mFPCA(2:end, 2:end));  %%!!  
+Var_mean = cell2mat(Original_Scale_Var_mean(2:end, 2:end));  %%!!  
+Var_std = cell2mat(Original_Scale_Var_std(2:end, 2:end));  %%!!  
+n_FPC = size(Y_STDZ_FPCs_mFPCA, 2) / num_ROIs;
+n_T = size(Y_STDZ_Mean_mFPCA, 1);
+
+Individual_Curves_twinPick_All = zeros(length(subjects_twinPick_All), n_T, num_ROIs);
+for ii = 1:length(subjects_twinPick_All)
+    for pp = 1:num_ROIs
+        Individual_Curve = Y_STDZ_Mean_mFPCA(:, pp);
+        for kk = 1:n_FPC
+            Individual_Curve = Individual_Curve + Y_STDZ_FPCs_mFPCA(:, (pp-1)*n_FPC+kk)*FPC_scores_twinPick_All(ii, (pp-1)*n_FPC+kk);
+        end
+        Individual_Curve = Individual_Curve * Var_std(pp) + Var_mean(pp);  %%!!  Re-scale
+        Individual_Curves_twinPick_All(ii, :, pp) = Individual_Curve;  %%!!  
+    end
+end
+Individual_Curves_Mean_twinPick_All = squeeze(mean(Individual_Curves_twinPick_All, 1));
+Individual_Curves_Std_twinPick_All = squeeze(std(Individual_Curves_twinPick_All, 0, 1));  %%!!  
+
+Individual_Curves_twinPick_Normal = zeros(length(subjects_twinPick_Normal), n_T, num_ROIs);
+for ii = 1:length(subjects_twinPick_Normal)
+    for pp = 1:num_ROIs
+        Individual_Curve = Y_STDZ_Mean_mFPCA(:, pp);
+        for kk = 1:n_FPC
+            Individual_Curve = Individual_Curve + Y_STDZ_FPCs_mFPCA(:, (pp-1)*n_FPC+kk)*FPC_scores_twinPick_Normal(ii, (pp-1)*n_FPC+kk);
+        end
+        Individual_Curve = Individual_Curve * Var_std(pp) + Var_mean(pp);  %%!!  Re-scale
+        Individual_Curves_twinPick_Normal(ii, :, pp) = Individual_Curve;  %%!!  
+    end
+end
+Individual_Curves_Mean_twinPick_Normal = squeeze(mean(Individual_Curves_twinPick_Normal, 1));
+Individual_Curves_Std_twinPick_Normal = squeeze(std(Individual_Curves_twinPick_Normal, 0, 1));  %%!!  
+
+Individual_Curves_twinPick_NDD = zeros(length(subjects_twinPick_NDD), n_T, num_ROIs);
+for ii = 1:length(subjects_twinPick_NDD)
+    for pp = 1:num_ROIs
+        Individual_Curve = Y_STDZ_Mean_mFPCA(:, pp);
+        for kk = 1:n_FPC
+            Individual_Curve = Individual_Curve + Y_STDZ_FPCs_mFPCA(:, (pp-1)*n_FPC+kk)*FPC_scores_twinPick_NDD(ii, (pp-1)*n_FPC+kk);
+        end
+        Individual_Curve = Individual_Curve * Var_std(pp) + Var_mean(pp);  %%!!  Re-scale
+        Individual_Curves_twinPick_NDD(ii, :, pp) = Individual_Curve;  %%!!  
+    end
+end
+Individual_Curves_Mean_twinPick_NDD = squeeze(mean(Individual_Curves_twinPick_NDD, 1));
+Individual_Curves_Std_twinPick_NDD = squeeze(std(Individual_Curves_twinPick_NDD, 0, 1));  %%!!  
+
+Individual_Curves_twinPick_MPD = zeros(length(subjects_twinPick_MPD), n_T, num_ROIs);
+for ii = 1:length(subjects_twinPick_MPD)
+    for pp = 1:num_ROIs
+        Individual_Curve = Y_STDZ_Mean_mFPCA(:, pp);
+        for kk = 1:n_FPC
+            Individual_Curve = Individual_Curve + Y_STDZ_FPCs_mFPCA(:, (pp-1)*n_FPC+kk)*FPC_scores_twinPick_MPD(ii, (pp-1)*n_FPC+kk);
+        end
+        Individual_Curve = Individual_Curve * Var_std(pp) + Var_mean(pp);  %%!!  Re-scale
+        Individual_Curves_twinPick_MPD(ii, :, pp) = Individual_Curve;  %%!!  
+    end
+end
+Individual_Curves_Mean_twinPick_MPD = squeeze(mean(Individual_Curves_twinPick_MPD, 1));
+Individual_Curves_Std_twinPick_MPD = squeeze(std(Individual_Curves_twinPick_MPD, 0, 1));  %%!!  
+
+%X_GAS_Day_Y_Mean_mFPCA = readcell([datapath 'mfpca_tra_' measure label '_twinPick_All_X_GAS_Day_Y_Mean_mFPCA_1.csv']);  %%!!  
+%X_GAS_Day = cell2mat(X_GAS_Day_Y_Mean_mFPCA(2:end, 1));  %%!!  
+%Y_Mean_mFPCA = cell2mat(X_GAS_Day_Y_Mean_mFPCA(2:end, 2:end));  %%!!  
+%
+if ~ismember(measure, {'PeakFre1', 'RMSSD'})  %%!!  not temporal measures
+    group = groups{end};
+    group_s = groups_s{end};
+    load([datapath0 'M_FC_Z_' measure label Cov_label_HCP '_twinPick_All' FD '_notr' num2str(threshold) '_' dataset '_' group '.mat']);  %%!!  same  %%!!  %%!!  
+    measure_mean = mean(M_FC_Z, 1); %% HCP Adult
+end
+%}
+linewidth = 4;  %%!!  %%!!  Updated
+facealpha = 0.3;  %%!!  %%!!  
+
+figure;
+hold on; %% 
+X_inds = X_GAS_Day>=300 & X_GAS_Day<=3950;  %%!!  
+x = X_GAS_Day(X_inds); %% 
+y = Individual_Curves_Mean_twinPick_All(X_inds, :);  %%!!    %%!!  
+for rr = 1:num_ROIs
+    plot(x, y(:, rr), 'Color', Colors(rr, :), 'LineStyle', '-', 'LineWidth', linewidth);  %%    %%!!  'Marker', 'o', 
+end
+%plot(x, y(:, 9), 'Color', Colors(9, :), 'LineStyle', '-', 'LineWidth', linewidth);  %%    %%!!  'Marker', '*', 
+%plot(x, y(:, 10), 'Color', Colors(10, :), 'LineStyle', '-', 'LineWidth', linewidth);  %%    %%!!  'Marker', '*', 
+legend(networks, 'Location', 'northeastoutside', 'fontsize', 20, 'FontWeight', 'bold');  %%!!  Updated
+
+std_dev = Individual_Curves_Std_twinPick_All(X_inds, :);  %%!!    %%!!  
+sem = std_dev / sqrt(length(subjects_twinPick_All));  %%!!  standard error mean
+upper_bound = y + sem;  %%!!  
+lower_bound = y - sem;  %%!!  
+for rr = 1:num_ROIs
+    fill([x; flipud(x)], [upper_bound(:, rr); flipud(lower_bound(:, rr))], Colors(rr, :), 'FaceAlpha', facealpha, 'EdgeColor', 'none', 'HandleVisibility', 'off');  %%!!    %%!!  
+end
+
+%
+if ~ismember(measure, {'PeakFre1', 'RMSSD'})  %%!!  not temporal measures
+    x = [3950, 4680]'; %%   %%!!  
+    y = [y(end, :); measure_mean];  %%!!  
+    for rr = 1:num_ROIs
+        plot(x, y(:, rr), 'Color', Colors(rr, :), 'LineStyle', '--', 'LineWidth', linewidth, 'HandleVisibility', 'off');  %%    %%!!  'Marker', 'o', 
+    end
+    %plot(x, y(:, 9), 'Color', Colors(9, :), 'LineStyle', '--', 'LineWidth', linewidth, 'HandleVisibility', 'off');  %%    %%!!  'Marker', '*', 
+    %plot(x, y(:, 10), 'Color', Colors(10, :), 'LineStyle', '--', 'LineWidth', linewidth, 'HandleVisibility', 'off');  %%    %%!!  'Marker', '*', 
+end
+%}
+hold off; %% 
+xlim([300, 4680]);  %%!!  3950
+%ylim(ylims(mm,:));  %%!!  %%!!  Updated
+xticks(GAS_rough);  %%!!  
+xticklabels(GAS_rough_labels);  %%!!  
+%yticks([-0.2:0.1:1.0]);  %%!!  
+xlabel('GAS Day');
+ylabel(['Mean Trajectory ' measure_str ' All']);  %%!!  label Cov_label  twinPick  %%!!  Updated
+set(gcf, 'position', [500, 500, 1200, 800]);  %%!!    %%!!  [500, 500, 1000, 800]
+set(gca, 'fontsize', 20, 'FontWeight', 'bold');  %%!!  Updated
+if strcmp(measure, 'Gradient2_AlignedToHCP')
+    set(gca, 'YDir', 'reverse');  %%!!  reverse Transmodal-to-Primary to Primary-to-Transmodal
+end
+%outfile = [outputpath 'Mean_mFPCA_' measure label Cov_label '_twinPick_All_Plot_updated_Original' FD '_notr' num2str(threshold) '_' dataset '.fig']; %%   %%!!  
+%saveas(gcf, outfile);  %%!!  
+outfile0 = [outputpath 'Mean_mFPCA_' measure label Cov_label '_twinPick_All_Plot_updated_Original' FD '_notr' num2str(threshold) '_' dataset '.png']; %%   %%!!  
+saveas(gcf, outfile0);  %%!!  
+clf(gcf);
+close(gcf);
+%outfile1 = [outputpath 'Mean_mFPCA_' measure label Cov_label '_twinPick_All_M_Original' FD '_notr' num2str(threshold) '_' dataset '.mat']; %%   %%!!  
+%save(outfile1, 'ROIs', 'networks', 'groups', 'groups_s', 'GAS_rough', 'X_GAS_Day_Y_Mean_mFPCA', 'X_GAS_Day', 'Y_Mean_mFPCA', 'Colors');  %%!!  %%!!  
+
+figure;
+hold on; %% 
+X_inds = X_GAS_Day>=300 & X_GAS_Day<=3950;  %%!!  
+x = X_GAS_Day(X_inds); %% 
+y = Individual_Curves_Mean_twinPick_Normal(X_inds, :);  %%!!    %%!!  
+for rr = 1:num_ROIs
+    plot(x, y(:, rr), 'Color', Colors(rr, :), 'LineStyle', '-', 'LineWidth', linewidth);  %%    %%!!  'Marker', 'o', 
+end
+legend(networks, 'Location', 'northeastoutside', 'fontsize', 20, 'FontWeight', 'bold');  %%!!  Updated
+std_dev = Individual_Curves_Std_twinPick_Normal(X_inds, :);  %%!!    %%!!  
+sem = std_dev / sqrt(length(subjects_twinPick_Normal));  %%!!  standard error mean
+upper_bound = y + sem;  %%!!  
+lower_bound = y - sem;  %%!!  
+for rr = 1:num_ROIs
+    fill([x; flipud(x)], [upper_bound(:, rr); flipud(lower_bound(:, rr))], Colors(rr, :), 'FaceAlpha', facealpha, 'EdgeColor', 'none', 'HandleVisibility', 'off');  %%!!    %%!!  
+end
+%
+if ~ismember(measure, {'PeakFre1', 'RMSSD'})  %%!!  not temporal measures
+    x = [3950, 4680]'; %%   %%!!  
+    y = [y(end, :); measure_mean];  %%!!  
+    for rr = 1:num_ROIs
+        plot(x, y(:, rr), 'Color', Colors(rr, :), 'LineStyle', '--', 'LineWidth', linewidth, 'HandleVisibility', 'off');  %%    %%!!  'Marker', 'o', 
+    end
+    %plot(x, y(:, 9), 'Color', Colors(9, :), 'LineStyle', '--', 'LineWidth', linewidth, 'HandleVisibility', 'off');  %%    %%!!  'Marker', '*', 
+    %plot(x, y(:, 10), 'Color', Colors(10, :), 'LineStyle', '--', 'LineWidth', linewidth, 'HandleVisibility', 'off');  %%    %%!!  'Marker', '*', 
+end
+%}
+hold off; %% 
+xlim([300, 4680]);  %%!!  3950
+%ylim(ylims(mm,:));  %%!!  %%!!  Updated
+xticks(GAS_rough);  %%!!  
+xticklabels(GAS_rough_labels);  %%!!  
+%yticks([-0.2:0.1:1.0]);  %%!!  
+xlabel('GAS Day');
+ylabel(['Mean Trajectory ' measure_str ' Normal']);  %%!!  label Cov_label  twinPick  %%!!  Trajectory
+set(gcf, 'position', [500, 500, 1200, 800]);  %%!!    %%!!  [500, 500, 1000, 800]
+set(gca, 'fontsize', 20, 'FontWeight', 'bold');  %%!!  Updated
+if strcmp(measure, 'Gradient2_AlignedToHCP')
+    set(gca, 'YDir', 'reverse');  %%!!  reverse Transmodal-to-Primary to Primary-to-Transmodal
+end
+%outfile = [outputpath 'Mean_mFPCA_' measure label Cov_label '_twinPick_Normal_Plot_updated_Original' FD '_notr' num2str(threshold) '_' dataset '.fig']; %%   %%!!  
+%saveas(gcf, outfile);  %%!!  
+outfile0 = [outputpath 'Mean_mFPCA_' measure label Cov_label '_twinPick_Normal_Plot_updated_Original' FD '_notr' num2str(threshold) '_' dataset '.png']; %%   %%!!  
+saveas(gcf, outfile0);  %%!!  
+clf(gcf);
+close(gcf);
+
+figure;
+hold on; %% 
+X_inds = X_GAS_Day>=300 & X_GAS_Day<=3950;  %%!!  
+x = X_GAS_Day(X_inds); %% 
+y = Individual_Curves_Mean_twinPick_NDD(X_inds, :);  %%!!    %%!!  
+for rr = 1:num_ROIs
+    plot(x, y(:, rr), 'Color', Colors(rr, :), 'LineStyle', '-', 'LineWidth', linewidth);  %%    %%!!  'Marker', 'o', 
+end
+legend(networks, 'Location', 'northeastoutside', 'fontsize', 20, 'FontWeight', 'bold');  %%!!  Updated
+std_dev = Individual_Curves_Std_twinPick_NDD(X_inds, :);  %%!!    %%!!  
+sem = std_dev / sqrt(length(subjects_twinPick_NDD));  %%!!  standard error mean
+upper_bound = y + sem;  %%!!  
+lower_bound = y - sem;  %%!!  
+for rr = 1:num_ROIs
+    fill([x; flipud(x)], [upper_bound(:, rr); flipud(lower_bound(:, rr))], Colors(rr, :), 'FaceAlpha', facealpha, 'EdgeColor', 'none', 'HandleVisibility', 'off');  %%!!    %%!!  
+end
+hold off; %% 
+xlim([300, 3950]);  %%!!  4680
+%ylim(ylims(mm,:));  %%!!  %%!!  Updated
+xticks(GAS_rough);  %%!!  
+xticklabels(GAS_rough_labels);  %%!!  
+%yticks([-0.2:0.1:1.0]);  %%!!  
+xlabel('GAS Day');
+ylabel(['Mean Trajectory ' measure_str ' NDD']);  %%!!  label Cov_label  twinPick  %%!!  Updated
+set(gcf, 'position', [500, 500, 1000, 800]);  %%!!    %%!!  [500, 500, 1200, 800]
+set(gca, 'fontsize', 20, 'FontWeight', 'bold');  %%!!  Updated
+if strcmp(measure, 'Gradient2_AlignedToHCP')
+    set(gca, 'YDir', 'reverse');  %%!!  reverse Transmodal-to-Primary to Primary-to-Transmodal
+end
+%outfile = [outputpath 'Mean_mFPCA_' measure label Cov_label '_twinPick_NDD_Plot_updated_Original' FD '_notr' num2str(threshold) '_' dataset '.fig']; %%   %%!!  
+%saveas(gcf, outfile);  %%!!  
+outfile0 = [outputpath 'Mean_mFPCA_' measure label Cov_label '_twinPick_NDD_Plot_updated_Original' FD '_notr' num2str(threshold) '_' dataset '.png']; %%   %%!!  
+saveas(gcf, outfile0);  %%!!  
+clf(gcf);
+close(gcf);
+
+figure;
+hold on; %% 
+X_inds = X_GAS_Day>=300 & X_GAS_Day<=3950;  %%!!  
+x = X_GAS_Day(X_inds); %% 
+y = Individual_Curves_Mean_twinPick_MPD(X_inds, :);  %%!!    %%!!  
+for rr = 1:num_ROIs
+    plot(x, y(:, rr), 'Color', Colors(rr, :), 'LineStyle', '-', 'LineWidth', linewidth);  %%    %%!!  'Marker', 'o', 
+end
+legend(networks, 'Location', 'northeastoutside', 'fontsize', 20, 'FontWeight', 'bold');  %%!!  Updated
+std_dev = Individual_Curves_Std_twinPick_MPD(X_inds, :);  %%!!    %%!!  
+sem = std_dev / sqrt(length(subjects_twinPick_MPD));  %%!!  standard error mean
+upper_bound = y + sem;  %%!!  
+lower_bound = y - sem;  %%!!  
+for rr = 1:num_ROIs
+    fill([x; flipud(x)], [upper_bound(:, rr); flipud(lower_bound(:, rr))], Colors(rr, :), 'FaceAlpha', facealpha, 'EdgeColor', 'none', 'HandleVisibility', 'off');  %%!!    %%!!  
+end
+hold off; %% 
+xlim([300, 3950]);  %%!!  4680
+%ylim(ylims(mm,:));  %%!!  %%!!  Updated
+xticks(GAS_rough);  %%!!  
+xticklabels(GAS_rough_labels);  %%!!  
+%yticks([-0.2:0.1:1.0]);  %%!!  
+xlabel('GAS Day');
+ylabel(['Mean Trajectory ' measure_str ' MPD']);  %%!!  label Cov_label  twinPick  %%!!  Updated
+set(gcf, 'position', [500, 500, 1000, 800]);  %%!!    %%!!  [500, 500, 1200, 800]
+set(gca, 'fontsize', 20, 'FontWeight', 'bold');  %%!!  Updated
+if strcmp(measure, 'Gradient2_AlignedToHCP')
+    set(gca, 'YDir', 'reverse');  %%!!  reverse Transmodal-to-Primary to Primary-to-Transmodal
+end
+%outfile = [outputpath 'Mean_mFPCA_' measure label Cov_label '_twinPick_MPD_Plot_updated_Original' FD '_notr' num2str(threshold) '_' dataset '.fig']; %%   %%!!  
+%saveas(gcf, outfile);  %%!!  
+outfile0 = [outputpath 'Mean_mFPCA_' measure label Cov_label '_twinPick_MPD_Plot_updated_Original' FD '_notr' num2str(threshold) '_' dataset '.png']; %%   %%!!  
+saveas(gcf, outfile0);  %%!!  
+clf(gcf);
+close(gcf);
+
+linewidth = 3;  %%!!  Updated
+
+figure;
+hold on; %% 
+X_inds = X_GAS_Day>=300 & X_GAS_Day<=3950;  %%!!  
+x = X_GAS_Day(X_inds); %% 
+y = Individual_Curves_Mean_twinPick_Normal(X_inds, :);  %%!!    %%!!  
+for rr = 1:num_ROIs
+    plot(x, y(:, rr), 'Color', Colors(rr, :), 'LineStyle', '-', 'LineWidth', linewidth);  %%    %%!!  'Marker', 'o', 
+end
+%legend(strcat('Normal-', networks), 'Location', 'northeastoutside'); %% 
+std_dev = Individual_Curves_Std_twinPick_Normal(X_inds, :);  %%!!    %%!!  
+sem = std_dev / sqrt(length(subjects_twinPick_Normal));  %%!!  standard error mean
+upper_bound = y + sem;  %%!!  
+lower_bound = y - sem;  %%!!  
+for rr = 1:num_ROIs
+    fill([x; flipud(x)], [upper_bound(:, rr); flipud(lower_bound(:, rr))], Colors(rr, :), 'FaceAlpha', facealpha, 'EdgeColor', 'none', 'HandleVisibility', 'off');  %%!!    %%!!  
+end
+y = Individual_Curves_Mean_twinPick_NDD(X_inds, :);  %%!!    %%!!  
+for rr = 1:num_ROIs
+    plot(x, y(:, rr), 'Color', Colors(rr, :), 'LineStyle', '-.', 'LineWidth', linewidth);  %%    %%!!  'Marker', 'o', Updated
+end
+legend([strcat('Normal-', networks), strcat('NDD-', networks)], 'Location', 'northeastoutside', 'fontsize', 18, 'FontWeight', 'bold');  %%!!  Updated
+std_dev = Individual_Curves_Std_twinPick_NDD(X_inds, :);  %%!!    %%!!  
+sem = std_dev / sqrt(length(subjects_twinPick_NDD));  %%!!  standard error mean
+upper_bound = y + sem;  %%!!  
+lower_bound = y - sem;  %%!!  
+for rr = 1:num_ROIs
+    fill([x; flipud(x)], [upper_bound(:, rr); flipud(lower_bound(:, rr))], Colors(rr, :), 'FaceAlpha', facealpha, 'EdgeColor', 'none', 'HandleVisibility', 'off');  %%!!    %%!!  
+end
+hold off; %% 
+xlim([300, 3950]);  %%!!  4680
+%ylim(ylims(mm,:));  %%!!  %%!!  Updated
+xticks(GAS_rough);  %%!!  
+xticklabels(GAS_rough_labels);  %%!!  
+%yticks([-0.2:0.1:1.0]);  %%!!  
+xlabel('GAS Day');
+ylabel(['Mean Trajectory ' measure_str ' Normal-NDD']);  %%!!  label Cov_label  twinPick  %%!!  Updated
+set(gcf, 'position', [500, 500, 1000, 800]);  %%!!    %%!!  [500, 500, 1200, 800]
+set(gca, 'fontsize', 18, 'FontWeight', 'bold');  %%!!  Updated
+if strcmp(measure, 'Gradient2_AlignedToHCP')
+    set(gca, 'YDir', 'reverse');  %%!!  reverse Transmodal-to-Primary to Primary-to-Transmodal
+end
+%outfile = [outputpath 'Mean_mFPCA_' measure label Cov_label '_twinPick_Normal_NDD_Plot_updated_Original' FD '_notr' num2str(threshold) '_' dataset '.fig']; %%   %%!!  
+%saveas(gcf, outfile);  %%!!  
+outfile0 = [outputpath 'Mean_mFPCA_' measure label Cov_label '_twinPick_Normal_NDD_Plot_updated_Original' FD '_notr' num2str(threshold) '_' dataset '.png']; %%   %%!!  
+saveas(gcf, outfile0);  %%!!  
+clf(gcf);
+close(gcf);
+
+figure;
+hold on; %% 
+X_inds = X_GAS_Day>=300 & X_GAS_Day<=3950;  %%!!  
+x = X_GAS_Day(X_inds); %% 
+y = Individual_Curves_Mean_twinPick_Normal(X_inds, :);  %%!!    %%!!  
+for rr = 1:num_ROIs
+    plot(x, y(:, rr), 'Color', Colors(rr, :), 'LineStyle', '-', 'LineWidth', linewidth);  %%    %%!!  'Marker', 'o', 
+end
+%legend(strcat('Normal-', networks), 'Location', 'northeastoutside'); %% 
+std_dev = Individual_Curves_Std_twinPick_Normal(X_inds, :);  %%!!    %%!!  
+sem = std_dev / sqrt(length(subjects_twinPick_Normal));  %%!!  standard error mean
+upper_bound = y + sem;  %%!!  
+lower_bound = y - sem;  %%!!  
+for rr = 1:num_ROIs
+    fill([x; flipud(x)], [upper_bound(:, rr); flipud(lower_bound(:, rr))], Colors(rr, :), 'FaceAlpha', facealpha, 'EdgeColor', 'none', 'HandleVisibility', 'off');  %%!!    %%!!  
+end
+y = Individual_Curves_Mean_twinPick_MPD(X_inds, :);  %%!!    %%!!  
+for rr = 1:num_ROIs
+    plot(x, y(:, rr), 'Color', Colors(rr, :), 'LineStyle', '-.', 'LineWidth', linewidth);  %%    %%!!  'Marker', 'o', Updated
+end
+legend([strcat('Normal-', networks), strcat('MPD-', networks)], 'Location', 'northeastoutside', 'fontsize', 18, 'FontWeight', 'bold');  %%!!  Updated
+std_dev = Individual_Curves_Std_twinPick_MPD(X_inds, :);  %%!!    %%!!  
+sem = std_dev / sqrt(length(subjects_twinPick_MPD));  %%!!  standard error mean
+upper_bound = y + sem;  %%!!  
+lower_bound = y - sem;  %%!!  
+for rr = 1:num_ROIs
+    fill([x; flipud(x)], [upper_bound(:, rr); flipud(lower_bound(:, rr))], Colors(rr, :), 'FaceAlpha', facealpha, 'EdgeColor', 'none', 'HandleVisibility', 'off');  %%!!    %%!!  
+end
+hold off; %% 
+xlim([300, 3950]);  %%!!  4680
+%ylim(ylims(mm,:));  %%!!  %%!!  Updated
+xticks(GAS_rough);  %%!!  
+xticklabels(GAS_rough_labels);  %%!!  
+%yticks([-0.2:0.1:1.0]);  %%!!  
+xlabel('GAS Day');
+ylabel(['Mean Trajectory ' measure_str ' Normal-MPD']);  %%!!  label Cov_label  twinPick  %%!!  Updated
+set(gcf, 'position', [500, 500, 1000, 800]);  %%!!    %%!!  [500, 500, 1200, 800]
+set(gca, 'fontsize', 18, 'FontWeight', 'bold');  %%!!  Updated
+if strcmp(measure, 'Gradient2_AlignedToHCP')
+    set(gca, 'YDir', 'reverse');  %%!!  reverse Transmodal-to-Primary to Primary-to-Transmodal
+end
+%outfile = [outputpath 'Mean_mFPCA_' measure label Cov_label '_twinPick_Normal_MPD_Plot_updated_Original' FD '_notr' num2str(threshold) '_' dataset '.fig']; %%   %%!!  
+%saveas(gcf, outfile);  %%!!  
+outfile0 = [outputpath 'Mean_mFPCA_' measure label Cov_label '_twinPick_Normal_MPD_Plot_updated_Original' FD '_notr' num2str(threshold) '_' dataset '.png']; %%   %%!!  
+saveas(gcf, outfile0);  %%!!  
+clf(gcf);
+close(gcf);
+
+end
+

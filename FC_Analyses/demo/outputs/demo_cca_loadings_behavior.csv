@@ -1,0 +1,13 @@
+canonical_dimension,variable,loading
+1,iq_score,-0.674910858133647
+1,anxiety_score,0.538113087711751
+1,depression_score,0.877367863055717
+1,executive_function_score,-0.769384227597748
+2,iq_score,0.604939048961248
+2,anxiety_score,0.762742734800689
+2,depression_score,0.268012013224988
+2,executive_function_score,0.225020778904325
+3,iq_score,0.412455150241422
+3,anxiety_score,-0.357848784615911
+3,depression_score,0.157091521277999
+3,executive_function_score,-0.267416241592455

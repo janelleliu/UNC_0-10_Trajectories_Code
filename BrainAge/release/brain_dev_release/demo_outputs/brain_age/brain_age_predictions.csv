@@ -1,0 +1,4 @@
+split,subject,ageyear,gasday,chronological_age_days,predicted_age_days,age_gap_days,n_slices
+valid,simBA001,0,300.0,300.0,1066.21484375,766.21484375,8
+valid,simBA002,1,665.0,665.0,1065.588134765625,400.588134765625,8
+valid,simBA003,2,1030.0,1030.0,1064.717041015625,34.717041015625,8

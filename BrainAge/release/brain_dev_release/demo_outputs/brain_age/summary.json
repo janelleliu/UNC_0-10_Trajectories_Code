@@ -1,0 +1,16 @@
+{
+  "n_predictions": 3,
+  "splits": [
+    "valid"
+  ],
+  "mean_abs_age_gap_days": 400.5066731770833,
+  "device": "cpu",
+  "modalities": [
+    "Elocal",
+    "Enodal",
+    "Gradient1",
+    "Gradient2",
+    "McosSim2",
+    "Str"
+  ]
+}
