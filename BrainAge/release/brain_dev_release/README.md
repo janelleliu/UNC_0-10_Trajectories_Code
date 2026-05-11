@@ -176,17 +176,6 @@ Available linear models:
 logistic_l2, logistic_l1, logistic_en, ridge, ridge_a10, linear_svc, sgd_log, sgd_hinge
 ```
 
-### Rebuild Lab Dataset
-
-The lab-specific dataset builder is retained for reproducibility:
-
-```bash
-cd classification
-python build_clean_classification_data.py
-```
-
-This script still targets the original lab data tree under `/common/lidxxlab/Yifan/BrainDev`. For external datasets, prepare a CSV and use `classification/linear_cv.py` directly.
-
 ## Data Formats
 
 ### Brain Age Guide CSV
